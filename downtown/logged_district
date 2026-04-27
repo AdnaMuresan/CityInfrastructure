@@ -1,3 +1,9 @@
 [Sun Apr 19 14:46:35 2026] User: alice | Role: manager | Action: --add
 [Mon Apr 27 21:56:03 2026] User: alice | Role: manager | Action: --add
 [Mon Apr 27 21:56:03 2026] User: alice | Role: manager | Action: monitor_notified_successfully
+[Mon Apr 27 22:10:30 2026] User: alice | Role: manager | Action: --add
+[Mon Apr 27 22:10:30 2026] User: alice | Role: manager | Action: ERROR_monitor_could_not_be_informed
+[Mon Apr 27 22:10:30 2026] User: bob | Role: inspector | Action: ERROR_monitor_could_not_be_informed
+[Mon Apr 27 22:10:31 2026] User: charlie | Role: inspector | Action: ERROR_monitor_could_not_be_informed
+[Mon Apr 27 22:11:09 2026] User: alice | Role: manager | Action: --add
+[Mon Apr 27 22:11:09 2026] User: alice | Role: manager | Action: ERROR_monitor_could_not_be_informed
