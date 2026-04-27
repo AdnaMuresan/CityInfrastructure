@@ -13,4 +13,5 @@ add_executable(CityInfrastructure main.c
         reports.c
         filter.h
         filter.c
+        monitor_reports.c
 )

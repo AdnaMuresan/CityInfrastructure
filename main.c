@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>  // Added for kill()
+#include <signal.h>     // Added for kill() and SIGUSR1
 #include <time.h>
 #include <unistd.h>
 #include "models.h"
@@ -55,6 +57,25 @@ void log_action(const char *district, const char *role, const char *user, const 
         time_str[strlen(time_str) - 1] = '\0';
 
         fprintf(log, "[%s] User: %s | Role: %s | Action: %s\n", time_str, user, role, action);
+        fclose(log);
+    }
+}
+
+/* Helper to log if the monitor was successfully notified or not */
+void log_monitor_status(const char *district, const char *role, const char *user, int success) {
+    char path[512];
+    snprintf(path, sizeof(path), "%s/logged_district", district);
+    FILE *log = fopen(path, "a");
+    if (log) {
+        time_t now = time(NULL);
+        char *time_str = ctime(&now);
+        time_str[strlen(time_str) - 1] = '\0';
+
+        if (success) {
+            fprintf(log, "[%s] User: %s | Role: %s | Action: monitor_notified_successfully\n", time_str, user, role);
+        } else {
+            fprintf(log, "[%s] User: %s | Role: %s | Action: ERROR_monitor_could_not_be_informed\n", time_str, user, role);
+        }
         fclose(log);
     }
 }
@@ -116,11 +137,10 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        Report new_report = {0}; // Initialize with zeros
-        // For a real app we'd parse all these from argv, but we simulate some for Phase 1
-        new_report.report_id = (int)time(NULL) % 10000; // Generate a random-ish ID
+        Report new_report = {0};
+        new_report.report_id = (int)time(NULL) % 10000;
         strncpy(new_report.inspector_name, user, MAX_NAME_LEN - 1);
-        new_report.latitude = 45.7489; // Example coords
+        new_report.latitude = 45.7489;
         new_report.longitude = 21.2087;
         strncpy(new_report.category, "road", MAX_CATEGORY_LEN - 1);
         new_report.severity = 2;
@@ -128,6 +148,29 @@ int main(int argc, char *argv[]) {
         strncpy(new_report.description, "Pothole simulation", MAX_DESC_LEN - 1);
 
         add_report(district, &new_report);
+
+        // --- PHASE 2: Notify Monitor ---
+        FILE *pid_file = fopen(".monitor_pid", "r");
+        int monitor_pid = -1;
+        int signal_sent = 0;
+
+        if (pid_file) {
+            if (fscanf(pid_file, "%d", &monitor_pid) == 1) {
+                // Attempt to send SIGUSR1
+                if (kill(monitor_pid, SIGUSR1) == 0) {
+                    signal_sent = 1;
+                    printf("Monitor (PID %d) successfully notified.\n", monitor_pid);
+                } else {
+                    printf("Error: Failed to send signal to monitor.\n");
+                }
+            }
+            fclose(pid_file);
+        } else {
+            printf("Notice: .monitor_pid not found. Monitor is not running.\n");
+        }
+
+        // Log the result of the notification attempt
+        log_monitor_status(district, role, user, signal_sent);
     }
     else if (strcmp(command, "--list") == 0) {
         if (!check_permission(path, role, 1, 0)) {
@@ -147,6 +190,13 @@ int main(int argc, char *argv[]) {
         }
         int report_id = atoi(argv[cmd_index + 1]);
         remove_report(district, report_id);
+    }
+    else if (strcmp(command, "--remove_district") == 0) {
+        if (strcmp(role, "manager") != 0) {
+            printf("Error: Only managers can remove districts.\n");
+            return 1;
+        }
+        remove_district(district);
     }
     else if (strcmp(command, "--update_threshold") == 0 && cmd_index + 1 < argc) {
         if (strcmp(role, "manager") != 0) {

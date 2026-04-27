@@ -11,6 +11,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <sys/wait.h>
 
 void add_report(const char *district_id, Report *new_report) {
     char path[512];
@@ -189,4 +190,31 @@ void update_threshold(const char *district_id, int new_threshold) {
 
     printf("Threshold updated to %d.\n", new_threshold);
     close(fd);
+}
+
+void remove_district(const char *district_id) {
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        perror("Fork failed");
+        return;
+    } else if (pid == 0) {
+        // --- CHILD PROCESS ---
+        // Warning: execlp replaces the child process with the rm command
+        execlp("rm", "rm", "-rf", district_id, NULL);
+
+        // If execlp succeeds, this next line never runs.
+        perror("execlp failed");
+        exit(1);
+    } else {
+        // --- PARENT PROCESS ---
+        wait(NULL); // Wait for the 'rm -rf' child process to finish
+
+        // Remove the symlink
+        char linkpath[512];
+        snprintf(linkpath, sizeof(linkpath), "active_reports-%s", district_id);
+        unlink(linkpath);
+
+        printf("District '%s' and its symlink have been entirely removed.\n", district_id);
+    }
 }

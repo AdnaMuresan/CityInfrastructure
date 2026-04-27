@@ -25,6 +25,9 @@ void remove_report(const char *district_id, int report_id);
 /* Manager only: Updates the district.cfg file if permissions are exactly 640 */
 void update_threshold(const char *district_id, int new_threshold);
 
+/* Manager only: Deletes a district using a child process */
+void remove_district(const char *district_id);
+
 #endif /* REPORTS_H */
 
 #endif //CITYINFRASTRUCTURE_REPORTS_H // clion
