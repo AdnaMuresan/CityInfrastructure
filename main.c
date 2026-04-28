@@ -140,12 +140,31 @@ int main(int argc, char *argv[]) {
         Report new_report = {0};
         new_report.report_id = (int)time(NULL) % 10000;
         strncpy(new_report.inspector_name, user, MAX_NAME_LEN - 1);
-        new_report.latitude = 45.7489;
-        new_report.longitude = 21.2087;
-        strncpy(new_report.category, "road", MAX_CATEGORY_LEN - 1);
-        new_report.severity = 2;
         new_report.timestamp = time(NULL);
-        strncpy(new_report.description, "Pothole simulation", MAX_DESC_LEN - 1);
+
+        // --- INTERACTIVE INPUT PROMPTS ---
+        printf("X: ");
+        if (scanf("%lf", &new_report.latitude) != 1) new_report.latitude = 0.0;
+
+        printf("Y: ");
+        if (scanf("%lf", &new_report.longitude) != 1) new_report.longitude = 0.0;
+
+        printf("Category (road/lighting/flooding/other): ");
+        if (scanf("%15s", new_report.category) != 1) strcpy(new_report.category, "unknown");
+
+        printf("Severity level (1/2/3): ");
+        if (scanf("%d", &new_report.severity) != 1) new_report.severity = 1;
+
+        // CRITICAL: scanf leaves a newline ('\n') character in the input buffer.
+        // We must clear it before calling fgets, otherwise fgets will just read the blank line and skip.
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+
+        printf("Description: ");
+        if (fgets(new_report.description, MAX_DESC_LEN, stdin) != NULL) {
+            // fgets includes the newline character at the end. This strips it off safely.
+            new_report.description[strcspn(new_report.description, "\n")] = '\0';
+        }
 
         add_report(district, &new_report);
 
@@ -156,7 +175,6 @@ int main(int argc, char *argv[]) {
 
         if (pid_file) {
             if (fscanf(pid_file, "%d", &monitor_pid) == 1) {
-                // Attempt to send SIGUSR1
                 if (kill(monitor_pid, SIGUSR1) == 0) {
                     signal_sent = 1;
                     printf("Monitor (PID %d) successfully notified.\n", monitor_pid);
@@ -169,7 +187,6 @@ int main(int argc, char *argv[]) {
             printf("Notice: .monitor_pid not found. Monitor is not running.\n");
         }
 
-        // Log the result of the notification attempt
         log_monitor_status(district, role, user, signal_sent);
     }
     else if (strcmp(command, "--list") == 0) {
