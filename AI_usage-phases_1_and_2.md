@@ -33,19 +33,3 @@
 **What was generated:** The AI provided a standard `fork()` template (`if pid == 0` for child, `else` for parent). In the child, it used `execlp("rm", "rm", "-rf", district_id, NULL)`. In the parent, it used `wait(NULL)` to pause until the child finished before unlinking the symlink.
 
 **What I learned/changed:** I learned how `exec` actually works: it completely overwrites the child process's memory space with the new program (`rm`). That is why you don't need a `return` or `exit` statement after a successful `exec`—the original C code no longer exists in that process! I added an `exit(1)` immediately after the `execlp` call just in case the execution fails, ensuring a broken child process doesn't accidentally continue running the rest of the parent's code.
-
-## Phase 2: Processes and Signals
-
-### 1. Generating the Background Monitor and `sigaction`
-**Prompt:** "I need to write a background C program called `monitor_reports` that loops indefinitely until it receives a SIGINT. It also needs to listen for SIGUSR1. I am forbidden from using the basic `signal()` function. Show me how to set this up using `sigaction()` and how to safely print a message when a signal is received."
-
-**What was generated:** The AI generated the boilerplate for `sigaction`, including setting `sa.sa_flags = 0` and `sigemptyset()`. Crucially, inside the signal handlers, the AI used the `write(STDOUT_FILENO, ...)` system call instead of `printf()`.
-
-**What I learned/changed:** I learned that `printf` is not "async-signal-safe." If a signal interrupts the program while it is already in the middle of a `printf` call, calling `printf` again inside the signal handler can cause a deadlock or crash. Using `write()` directly to standard output is the POSIX-compliant, safe way to print from inside a signal handler. I also learned to use a `volatile sig_atomic_t` flag to safely break the `pause()` loop when SIGINT is caught.
-
-### 2. Deleting the District (`fork` and `exec`)
-**Prompt:** "I need to add a `--remove_district` command that deletes a folder. The project requires me to use `fork()` to create a child process, and then use the `exec*()` family to run the terminal command `rm -rf <district_directory>`. How do I structure this safely?"
-
-**What was generated:** The AI provided a standard `fork()` template (`if pid == 0` for child, `else` for parent). In the child, it used `execlp("rm", "rm", "-rf", district_id, NULL)`. In the parent, it used `wait(NULL)` to pause until the child finished before unlinking the symlink.
-
-**What I learned/changed:** I learned how `exec` actually works: it completely overwrites the child process's memory space with the new program (`rm`). That is why you don't need a `return` or `exit` statement after a successful `exec`—the original C code no longer exists in that process! I added an `exit(1)` immediately after the `execlp` call just in case the execution fails, ensuring a broken child process doesn't accidentally continue running the rest of the parent's code.
