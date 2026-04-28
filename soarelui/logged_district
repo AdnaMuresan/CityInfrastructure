@@ -1,1 +1,5 @@
 [Tue Apr 28 08:45:46 2026] User: dave | Role: inspector | Action: monitor_notified_successfully
+[Tue Apr 28 09:13:02 2026] User: alina | Role: manager | Action: --add
+[Tue Apr 28 09:13:54 2026] User: alina | Role: manager | Action: monitor_notified_successfully
+[Tue Apr 28 09:15:57 2026] User: alina | Role: manager | Action: --remove_report
+[Tue Apr 28 09:17:31 2026] User: dave | Role: inspector | Action: monitor_notified_successfully
